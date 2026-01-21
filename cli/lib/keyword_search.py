@@ -66,11 +66,17 @@ class InvertedIndex:
 
     def get_idf(self, term: str) -> float:
         token = _parse_single_term(term)
-        num_documents = len(self.docmap)
+        document_count = len(self.docmap)
         document_frequency = len(self.get_documents(token))
         if document_frequency == 0:
             return 0.0
-        return math.log(num_documents / document_frequency)
+        return math.log(document_count / document_frequency)
+
+    def get_bm25_idf(self, term: str) -> float:
+        token = _parse_single_term(term)
+        document_count = len(self.docmap)
+        document_frequency = len(self.get_documents(token))
+        return math.log((document_count - document_frequency + 0.5) / (document_frequency + 0.5) + 1)
 
     def __add_document(self, doc_id: int, text: str) -> None:
         tokens = tokenize_text(text)
@@ -100,6 +106,10 @@ def tf_command(doc_id: int, term: str) -> int:
 
 def idf_command(term: str) -> float:
     return _load_index().get_idf(term)
+
+
+def bm25_idf_command(term: str) -> float:
+    return _load_index().get_bm25_idf(term)
 
 
 def tfidf_command(doc_id: int, term: str) -> float:

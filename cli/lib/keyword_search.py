@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from nltk.stem import PorterStemmer
 
 from .search_utils import (
+    BM25_K1,
     CACHE_DIR,
     DEFAULT_SEARCH_LIMIT,
     load_movies,
@@ -78,6 +79,10 @@ class InvertedIndex:
         document_frequency = len(self.get_documents(token))
         return math.log((document_count - document_frequency + 0.5) / (document_frequency + 0.5) + 1)
 
+    def get_bm25_tf(self, doc_id: int, term: str, k1: float = BM25_K1) -> float:
+        tf = self.get_tf(doc_id, term)
+        return (tf * (k1 + 1)) / (tf + k1)
+
     def __add_document(self, doc_id: int, text: str) -> None:
         tokens = tokenize_text(text)
         for token in set(tokens):
@@ -110,6 +115,10 @@ def idf_command(term: str) -> float:
 
 def bm25_idf_command(term: str) -> float:
     return _load_index().get_bm25_idf(term)
+
+
+def bm25_tf_command(doc_id: int, term: str, k1: float = BM25_K1) -> float:
+    return _load_index().get_bm25_tf(doc_id, term, k1)
 
 
 def tfidf_command(doc_id: int, term: str) -> float:

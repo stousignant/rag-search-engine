@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import sys
 
 from lib.keyword_search import build_command, search_command
 
@@ -24,9 +25,13 @@ def main() -> None:
             print("Inverted index built successfully.")
         case "search":
             print(f"Searching for: {args.query}")
-            results = search_command(args.query)
+            try:
+                results = search_command(args.query)
+            except FileNotFoundError as e:
+                print(str(e))
+                sys.exit(1)
             for i, result in enumerate(results, start=1):
-                print(f"{i}. ({res['id']}) {res['title']}")
+                print(f"{i}. ({result['id']}) {result['title']}")
         case _:
             parser.print_help()
 

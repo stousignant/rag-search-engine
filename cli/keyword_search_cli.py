@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from lib.keyword_search import build_command, idf_command, search_command, tf_command
+from lib.keyword_search import build_command, idf_command, search_command, tf_command, tfidf_command
 
 
 def main() -> None:
@@ -22,6 +22,10 @@ def main() -> None:
 
     idf_parser = subparsers.add_parser("idf", help="Get inverse document frequency for a term")
     idf_parser.add_argument("term", type=str, help="Term to look up")
+
+    tfidf_parser = subparsers.add_parser("tfidf", help="Get TF-IDF score for a term in a document")
+    tfidf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tfidf_parser.add_argument("term", type=str, help="Term to look up")
 
     args = parser.parse_args()
 
@@ -59,6 +63,16 @@ def main() -> None:
                 print(str(e))
                 sys.exit(1)
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
+        case "tfidf":
+            try:
+                tf_idf = tfidf_command(args.doc_id, args.term)
+            except FileNotFoundError as e:
+                print(str(e))
+                sys.exit(1)
+            except ValueError as e:
+                print(str(e))
+                sys.exit(1)
+            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}")                
         case _:
             parser.print_help()
 

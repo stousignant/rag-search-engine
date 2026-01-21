@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -9,6 +10,8 @@ from .search_utils import (
     DEFAULT_CHUNK_OVERLAP,
     DEFAULT_CHUNK_SIZE,
     load_movies,
+    SEMANTIC_CHUNK_MAX_SIZE,
+    SEMANTIC_CHUNK_OVERLAP,
 )
 
 MOVIE_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "movie_embeddings.npy")
@@ -153,3 +156,38 @@ def chunk_text(
     print(f"Chunking {len(text)} characters")
     for i, chunk in enumerate(chunks):
         print(f"{i + 1}. {chunk}")
+
+
+def semantic_chunking(
+    text: str,
+    max_chunk_size: int = SEMANTIC_CHUNK_MAX_SIZE,
+    overlap: int = SEMANTIC_CHUNK_OVERLAP,
+) -> list[str]:
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    # Filter out empty strings that might result from splitting
+    sentences = [s.strip() for s in sentences if s.strip()]
+    
+    chunks = []
+    n_sentences = len(sentences)
+    i = 0
+    
+    while i < n_sentences:
+        chunk_sentences = sentences[i : i + max_chunk_size]
+        if chunks and len(chunk_sentences) <= overlap:
+            break
+        
+        chunks.append(" ".join(chunk_sentences))
+        i += max_chunk_size - overlap
+    
+    return chunks
+
+
+def semantic_chunk(text: str, max_chunk_size: int = SEMANTIC_CHUNK_MAX_SIZE, overlap: int = SEMANTIC_CHUNK_OVERLAP) -> list[str]:
+    chunks = semantic_chunking(text, max_chunk_size, overlap)
+    total_chars = sum(len(chunk) for chunk in chunks)
+    print(f"Semantically chunking {total_chars} characters")
+
+    for i, chunk in enumerate(chunks, 1):
+        print(f"{i}. {chunk}")
+    
+    return chunks

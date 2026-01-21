@@ -10,6 +10,7 @@ from lib.semantic_search import (
     verify_embeddings,
     semantic_search,
     chunk_text,
+    semantic_chunk,
 )
 from lib.search_utils import load_movies
 
@@ -36,6 +37,11 @@ def main():
     chunk_parser.add_argument("--chunk-size", type=int, default=200, help="Number of words per chunk (default: 200)")
     chunk_parser.add_argument("--overlap", type=int, default=0, help="Number of overlapping words between chunks (default: 0)")
 
+    semantic_chunk_parser = subparsers.add_parser("semantic_chunk", help="Split text into semantic chunks by sentence boundaries")
+    semantic_chunk_parser.add_argument("text", type=str, help="Text to chunk")
+    semantic_chunk_parser.add_argument("--max-chunk-size", type=int, default=4, help="Maximum number of sentences per chunk (default: 4)")
+    semantic_chunk_parser.add_argument("--overlap", type=int, default=0, help="Number of overlapping sentences between chunks (default: 0)")
+
     args = parser.parse_args()
 
     match args.command:
@@ -51,6 +57,8 @@ def main():
             semantic_search(args.query, args.limit)
         case "chunk":
             chunk_text(args.text, args.chunk_size, args.overlap)
+        case "semantic_chunk":
+            semantic_chunk(args.text, args.max_chunk_size, args.overlap)
         case _:
             parser.print_help()
 

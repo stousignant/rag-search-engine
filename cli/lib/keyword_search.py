@@ -1,3 +1,4 @@
+import math
 import os
 import pickle
 import string
@@ -86,6 +87,20 @@ def tf_command(doc_id: int, term: str) -> int:
     idx = InvertedIndex()
     idx.load()
     return idx.get_tf(doc_id, term)
+
+
+def idf_command(term: str) -> float:
+    idx = InvertedIndex()
+    idx.load()
+    tokens = tokenize_text(term)
+    if len(tokens) != 1:
+        raise ValueError(f"Term must tokenize to exactly one token, got {len(tokens)}: {tokens}")
+    token = tokens[0]
+    num_documents = len(idx.docmap)
+    document_frequency = len(idx.get_documents(token))
+    if document_frequency == 0:
+        return 0.0
+    return math.log(num_documents / document_frequency)
 
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:

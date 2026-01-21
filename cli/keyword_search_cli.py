@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from lib.keyword_search import build_command, search_command
+from lib.keyword_search import build_command, search_command, tf_command
 
 
 def main() -> None:
@@ -15,6 +15,10 @@ def main() -> None:
 
     search_parser = subparsers.add_parser("search", help="Search movies using BM25")
     search_parser.add_argument("query", type=str, help="Search query")
+
+    tf_parser = subparsers.add_parser("tf", help="Get term frequency for a term in a document")
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tf_parser.add_argument("term", type=str, help="Term to look up")
 
     args = parser.parse_args()
 
@@ -32,6 +36,16 @@ def main() -> None:
                 sys.exit(1)
             for i, result in enumerate(results, start=1):
                 print(f"{i}. ({result['id']}) {result['title']}")
+        case "tf":
+            try:
+                count = tf_command(args.doc_id, args.term)
+            except FileNotFoundError as e:
+                print(str(e))
+                sys.exit(1)
+            except ValueError as e:
+                print(str(e))
+                sys.exit(1)
+            print(count)
         case _:
             parser.print_help()
 

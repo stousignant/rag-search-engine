@@ -23,6 +23,10 @@ def main():
     search_parser.add_argument("query", type=str, help="Search query")
     search_parser.add_argument("--limit", type=int, default=5, help="Number of results to return (default: 5)")
 
+    chunk_parser = subparsers.add_parser("chunk", help="Split text into fixed-size chunks")
+    chunk_parser.add_argument("text", type=str, help="Text to chunk")
+    chunk_parser.add_argument("--chunk-size", type=int, default=200, help="Number of words per chunk (default: 200)")
+
     args = parser.parse_args()
 
     match args.command:
@@ -44,6 +48,17 @@ def main():
                 print(f"{i}. {result['title']} (score: {result['score']:.4f})")
                 print(f"   {result['description']}")
                 print()
+        case "chunk":
+            words = args.text.split()
+            chunks = []
+            for i in range(0, len(words), args.chunk_size):
+                chunk = " ".join(words[i:i + args.chunk_size])
+                chunks.append(chunk)
+            
+            total_chars = sum(len(chunk) for chunk in chunks)
+            print(f"Chunking {total_chars} characters")
+            for i, chunk in enumerate(chunks, 1):
+                print(f"{i}. {chunk}")
         case _:
             parser.print_help()
 

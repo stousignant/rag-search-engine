@@ -2,7 +2,15 @@
 
 import argparse
 
-from lib.semantic_search import SemanticSearch, embed_query_text, embed_text, verify_model, verify_embeddings
+from lib.semantic_search import (
+    SemanticSearch,
+    embed_query_text,
+    embed_text,
+    verify_model,
+    verify_embeddings,
+    semantic_search,
+    chunk_text,
+)
 from lib.search_utils import load_movies
 
 
@@ -26,6 +34,7 @@ def main():
     chunk_parser = subparsers.add_parser("chunk", help="Split text into fixed-size chunks")
     chunk_parser.add_argument("text", type=str, help="Text to chunk")
     chunk_parser.add_argument("--chunk-size", type=int, default=200, help="Number of words per chunk (default: 200)")
+    chunk_parser.add_argument("--overlap", type=int, default=0, help="Number of overlapping words between chunks (default: 0)")
 
     args = parser.parse_args()
 
@@ -39,26 +48,9 @@ def main():
         case "embedquery":
             embed_query_text(args.query)
         case "search":
-            search = SemanticSearch()
-            documents = load_movies()
-            search.load_or_create_embeddings(documents)
-            results = search.search(args.query, args.limit)
-            
-            for i, result in enumerate(results, 1):
-                print(f"{i}. {result['title']} (score: {result['score']:.4f})")
-                print(f"   {result['description']}")
-                print()
+            semantic_search(args.query, args.limit)
         case "chunk":
-            words = args.text.split()
-            chunks = []
-            for i in range(0, len(words), args.chunk_size):
-                chunk = " ".join(words[i:i + args.chunk_size])
-                chunks.append(chunk)
-            
-            total_chars = sum(len(chunk) for chunk in chunks)
-            print(f"Chunking {total_chars} characters")
-            for i, chunk in enumerate(chunks, 1):
-                print(f"{i}. {chunk}")
+            chunk_text(args.text, args.chunk_size, args.overlap)
         case _:
             parser.print_help()
 

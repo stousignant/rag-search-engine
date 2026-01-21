@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import sys
 
 from lib.keyword_search import build_command, idf_command, search_command, tf_command, tfidf_command
+
+
+def _run_require_index(fn, *args, **kwargs):
+    """Run fn(*args, **kwargs); on FileNotFoundError or ValueError, print and exit(1)."""
+    try:
+        return fn(*args, **kwargs)
+    except FileNotFoundError as e:
+        print(str(e))
+        sys.exit(1)
+    except ValueError as e:
+        print(str(e))
+        sys.exit(1)
 
 
 def main() -> None:
@@ -44,35 +55,14 @@ def main() -> None:
             for i, result in enumerate(results, start=1):
                 print(f"{i}. ({result['id']}) {result['title']}")
         case "tf":
-            try:
-                count = tf_command(args.doc_id, args.term)
-            except FileNotFoundError as e:
-                print(str(e))
-                sys.exit(1)
-            except ValueError as e:
-                print(str(e))
-                sys.exit(1)
+            count = _run_require_index(tf_command, args.doc_id, args.term)
             print(count)
         case "idf":
-            try:
-                idf = idf_command(args.term)
-            except FileNotFoundError as e:
-                print(str(e))
-                sys.exit(1)
-            except ValueError as e:
-                print(str(e))
-                sys.exit(1)
+            idf = _run_require_index(idf_command, args.term)
             print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
         case "tfidf":
-            try:
-                tf_idf = tfidf_command(args.doc_id, args.term)
-            except FileNotFoundError as e:
-                print(str(e))
-                sys.exit(1)
-            except ValueError as e:
-                print(str(e))
-                sys.exit(1)
-            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}")                
+            tf_idf = _run_require_index(tfidf_command, args.doc_id, args.term)
+            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tf_idf:.2f}")
         case _:
             parser.print_help()
 

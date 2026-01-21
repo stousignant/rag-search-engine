@@ -61,11 +61,16 @@ class InvertedIndex:
         return sorted(list(doc_ids))
 
     def get_tf(self, doc_id: int, term: str) -> int:
-        tokens = tokenize_text(term)
-        if len(tokens) != 1:
-            raise ValueError(f"Term must tokenize to exactly one token, got {len(tokens)}: {tokens}")
-        token = tokens[0]
+        token = _parse_single_term(term)
         return self.term_frequencies.get(doc_id, Counter()).get(token, 0)
+
+    def get_idf(self, term: str) -> float:
+        token = _parse_single_term(term)
+        num_documents = len(self.docmap)
+        document_frequency = len(self.get_documents(token))
+        if document_frequency == 0:
+            return 0.0
+        return math.log(num_documents / document_frequency)
 
     def __add_document(self, doc_id: int, text: str) -> None:
         tokens = tokenize_text(text)
@@ -77,6 +82,12 @@ class InvertedIndex:
             self.term_frequencies[doc_id][token] += 1
 
 
+def _load_index() -> InvertedIndex:
+    idx = InvertedIndex()
+    idx.load()
+    return idx
+
+
 def build_command() -> None:
     idx = InvertedIndex()
     idx.build()
@@ -84,42 +95,20 @@ def build_command() -> None:
 
 
 def tf_command(doc_id: int, term: str) -> int:
-    idx = InvertedIndex()
-    idx.load()
-    return idx.get_tf(doc_id, term)
+    return _load_index().get_tf(doc_id, term)
 
 
 def idf_command(term: str) -> float:
-    idx = InvertedIndex()
-    idx.load()
-    tokens = tokenize_text(term)
-    if len(tokens) != 1:
-        raise ValueError(f"Term must tokenize to exactly one token, got {len(tokens)}: {tokens}")
-    token = tokens[0]
-    num_documents = len(idx.docmap)
-    document_frequency = len(idx.get_documents(token))
-    if document_frequency == 0:
-        return 0.0
-    return math.log(num_documents / document_frequency)
+    return _load_index().get_idf(term)
 
 
 def tfidf_command(doc_id: int, term: str) -> float:
-    idx = InvertedIndex()
-    idx.load()
-    tf = idx.get_tf(doc_id, term)
-    tokens = tokenize_text(term)
-    if len(tokens) != 1:
-        raise ValueError(f"Term must tokenize to exactly one token, got {len(tokens)}: {tokens}")
-    token = tokens[0]
-    num_documents = len(idx.docmap)
-    document_frequency = len(idx.get_documents(token))
-    idf = math.log(num_documents / document_frequency) if document_frequency > 0 else 0.0
-    return tf * idf
+    idx = _load_index()
+    return idx.get_tf(doc_id, term) * idx.get_idf(term)
 
 
 def search_command(query: str, limit: int = DEFAULT_SEARCH_LIMIT) -> list[dict]:
-    idx = InvertedIndex()
-    idx.load()
+    idx = _load_index()
 
     query_tokens = tokenize_text(query)
     results = []
@@ -158,6 +147,14 @@ def tokenize_text(text: str) -> list[str]:
     valid_tokens = filter_stop_words(valid_tokens)
     valid_tokens = stem_words(valid_tokens)
     return valid_tokens
+
+
+def _parse_single_term(term: str) -> str:
+    tokens = tokenize_text(term)
+    if len(tokens) != 1:
+        raise ValueError(f"Term must tokenize to exactly one token, got {len(tokens)}: {tokens}")
+    return tokens[0]
+
 
 def filter_stop_words(words: list[str]) -> list[str]:
     stop_words = load_stop_words()
